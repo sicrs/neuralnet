@@ -19,8 +19,6 @@ impl ActivationFunc {
     }
 }
 
-type InnerMatrix = Matrix<f64, Dynamic, Dynamic, VecStorage<f64, Dynamic, Dynamic>>;
-
 pub struct Network {
     activation_function: Box<dyn Fn(f64) -> f64>,
     bias_matrix: Vec<Vec<f64>>,
