@@ -8,4 +8,9 @@ edition = "2018"
 
 [dependencies]
 nalgebra = "^0.21"
-faster = "^0.5"
+faster = { version = "^0.5", optional = true }
+
+[features]
+default = ["simd"]
+
+simd = ["faster"]
