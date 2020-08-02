@@ -55,6 +55,7 @@ pub struct Network {
 
 impl Network {
     pub fn new(configuration: &[usize], activation_function: ActivationFunc) -> Network {
+        let configuration: Vec<usize> = Vec::from(configuration);
         let n_layers: usize = configuration.len();
 
         // output neurons do not require biases
@@ -77,7 +78,7 @@ impl Network {
         Network {
             activation_function: activation_function.get(),
             bias_matrix,
-            configuration: Vec::from(configuration),
+            configuration,
             weight_matrix,
         }
     }
@@ -123,13 +124,15 @@ impl Network {
     }
 
     /// Calculate output for the activation func input
-    pub fn feedforward(&mut self, layer: usize, neuron: usize, data: &Vector) -> f64 {
-        let weight_vec: &Vector = &self.weight_matrix[layer][neuron];
-        if data.len() != weight_vec.len() {
-            panic!("Vectors are not of the same dimension");
+    pub fn feed(&self, input: Vector) -> Vector {
+        let n_layers = self.configuration.len();
+        let mut layer_input: Vector = input;
+
+        for i in 1..n_layers {
+            layer_input = self.feed_layer(layer_input, i);
         }
 
-        weight_vec * data + self.bias_matrix[layer][neuron]
+        layer_input
     }
 
     pub fn train<M: train::TrainMethod, D: DataSource>(&mut self, method: M, training_data: D) {
