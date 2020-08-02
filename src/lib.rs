@@ -1,5 +1,4 @@
 #![allow(dead_code, unused_imports, unused_variables)]
-extern crate nalgebra as na;
 mod source;
 mod train;
 mod vector;
@@ -11,7 +10,6 @@ use self::vector::Vector;
     target_feature = "simd"
 ))]
 use faster::*;
-use na::{Dynamic, Matrix, VecStorage};
 
 pub enum ActivationFunc {
     Sigmoid,
