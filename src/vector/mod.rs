@@ -55,10 +55,63 @@ impl Mul for Vector {
     }
 }
 
+impl Mul for &Vector {
+    type Output = f64;
+    fn mul(self, rhs: Self) -> Self::Output {
+        if self.len() != rhs.len() {
+            panic!("Vectors are of different lenghts");
+        }
+
+        let mut total: f64 = 0.0;
+
+        for i in 0..self.inner.len() {
+            total += self.inner[i] * rhs.inner[i];
+        }
+
+        total
+    }
+    
+}
+
+impl Mul for &mut Vector {
+    type Output = f64;
+    fn mul(self, rhs: Self) -> Self::Output {
+        if self.len() != rhs.len() {
+            panic!("Vectors are of different lenghts");
+        }
+
+        let mut total: f64 = 0.0;
+
+        for i in 0..self.inner.len() {
+            total += self.inner[i] * rhs.inner[i];
+        }
+
+        total
+    }
+    
+}
+
 impl Vector {
     pub fn new(length: usize) -> Vector {
        Vector {
            inner: [0.0].repeat(length)
        }
     }
+
+    pub fn len(&self) -> usize {
+        self.inner.len()
+    }
+}
+
+impl From<Vec<f64>> for Vector {
+    fn from(inner: Vec<f64>) -> Self {
+        Vector { inner }
+    }
+}
+
+impl Into<Vec<f64>> for Vector {
+    fn into(self) -> Vec<f64> {
+        self.inner
+    }
+    
 }
