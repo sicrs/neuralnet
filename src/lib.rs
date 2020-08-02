@@ -15,15 +15,7 @@ pub enum ActivationFunc {
 }
 
 impl ActivationFunc {
-    fn get(self) -> Box<dyn Fn(f64) -> f64> {
-        Box::new(match self {
-            _ => |input: f64| {
-                1 as f64 / (1 as f64 + std::f64::consts::E.powf(- input))
-            }
-        })
-    }
-
-    fn get_fn(self) -> Box<dyn Fn(Vector) -> Vector> {
+    fn get(self) -> Box<dyn Fn(Vector) -> Vector> {
         Box::new(match self {
             _ => |input: Vector| {
                 let inner: Vec<f64> = input.into();
@@ -48,7 +40,7 @@ impl ActivationFunc {
 
 /// The neural network
 pub struct Network {
-    activation_function: Box<dyn Fn(f64) -> f64>,
+    activation_function: Box<dyn Fn(Vector) -> Vector>,
     bias_matrix: Vec<Vec<f64>>,
     pub configuration: Vec<usize>,
     weight_matrix: Vec<Vec<Vector>>,
@@ -57,21 +49,25 @@ pub struct Network {
 impl Network {
     pub fn new(configuration: Vec<usize>, activation_function: ActivationFunc) -> Network {
         let n_layers: usize = configuration.len();
-        let mut bias_matrix: Vec<Vec<f64>> = Vec::with_capacity(n_layers);
-        let mut weight_matrix: Vec<Vec<Vector>> = Vec::with_capacity(n_layers);
-        // populate the bias matrix
-        for i in 0..bias_matrix.capacity() {
-            // the matrix is a table with a bias for each node in the network
-            bias_matrix[i] = [0.0].repeat(configuration[i]);
-        }
 
-        // populate the weight matrix
-        for i in 0..weight_matrix.capacity() {
-            for j in 0..configuration[i] {
-                // the length of each neuron's weights vector is always the amount of input neurons
-                weight_matrix[i][j] = Vector::new(configuration[0]);
-            }
-        }
+        // output neurons do not require biases
+        let bias_matrix: Vec<Vec<f64>> = configuration
+            .iter()
+            .map(|x| [0.0].repeat(*x))
+            .collect();
+        
+        // The input neurons do not require a weight vector
+        let weight_matrix: Vec<Vec<Vector>> = configuration[1..]
+            .iter()
+            .zip(configuration[..(configuration.len() - 1)].iter())
+            .map(|(x, y)| {
+                let mut v: Vec<Vector> = Vec::with_capacity(*x);
+                for i in 0..v.capacity() {
+                    v[i] = Vector::new(*y);
+                }
+                v
+            })
+            .collect();
 
         Network { 
             activation_function: activation_function.get(),
