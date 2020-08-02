@@ -47,7 +47,7 @@ pub struct Network {
 }
 
 impl Network {
-    pub fn new(configuration: Vec<usize>, activation_function: ActivationFunc) -> Network {
+    pub fn new(configuration: &[usize], activation_function: ActivationFunc) -> Network {
         let n_layers: usize = configuration.len();
 
         // output neurons do not require biases
@@ -57,6 +57,7 @@ impl Network {
             .collect();
         
         // The input neurons do not require a weight vector
+        // NOTE: index 0 contains the weights for the nodes of layer 2 (index layer 1)
         let weight_matrix: Vec<Vec<Vector>> = configuration[1..]
             .iter()
             .zip(configuration[..(configuration.len() - 1)].iter())
@@ -72,9 +73,40 @@ impl Network {
         Network { 
             activation_function: activation_function.get(),
             bias_matrix,
-            configuration,
+            configuration: Vec::from(configuration),
             weight_matrix,
         }
+    }
+
+    /// Middleware function
+    fn feed_layer(&self, data: Vector, layer: usize) -> Vector {
+        if layer == 0 {
+            panic!("The first layer does not have weights");
+        }
+
+        if data.len() != self.weight_matrix[layer][0].len() {
+            panic!("The dimension of the input vector does not correspond with the dimension of the weight vector");
+        }
+
+        let weight_prod_collection: Vec<f64> = self.weight_matrix[layer - 1]
+            .iter()
+            .map(|weight| weight * &data)
+            .collect();
+
+        #[cfg(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "simd"))]
+        let result: Vec<f64> = (weight_prod_collection.simd_iter(f64s(0.0)), self.bias_matrix[layer].simd_iter(f64s(0.0)))
+            .zip()
+            .simd_map(|(weight_prod, bias)| weight_prod + bias)
+            .scalar_collect();
+            
+        #[cfg(not(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "simd")))]
+        let result: Vec<f64> = weight_prod_collection
+            .iter()
+            .zip(self.bias_matrix[layer].iter())
+            .map(|(weight_prod, bias)| weight_prod + bias)
+            .collect();
+        
+        Vector::from(result)
     }
 
     /// Calculate output for the activation func input
