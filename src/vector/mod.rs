@@ -1,3 +1,5 @@
+#[cfg(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "simd"))]
+use faster::*;
 use std::ops::{ Add, Sub, Mul };
 use std::vec::Vec;
 
@@ -12,13 +14,16 @@ impl Add for Vector {
             panic!("Vectors are of different dimensions!");
         }
 
-        let mut inner: Vec<f64> = Vec::with_capacity(self.inner.len());
-        for i in 0..self.inner.len() {
-            inner.push(self.inner[i] + rhs.inner[i]);
-        }
+        #[cfg(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "simd"))]
+        let inner: Vec<f64> = (self.inner.simd_iter(f64s(0.0)), rhs.inner.simd_iter(f64s(0.0)))
+            .zip()
+            .simd_map(|(a, b)| a + b)
+            .scalar_collect();
+
+        #[cfg(not(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "simd")))]
+        let inner: Vec<f64> = self.inner.iter().zip(rhs.inner.iter()).map(|(a, b)| a + b).collect();
 
         Vector { inner }
-        
     }
 }
 
@@ -29,10 +34,14 @@ impl Sub for Vector {
             panic!("Vectors are of different dimensions");
         }
 
-        let mut inner: Vec<f64> = Vec::with_capacity(self.inner.len());
-        for i in 0..self.inner.len() {
-            inner.push(self.inner[i] - rhs.inner[i]);
-        }
+        #[cfg(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "simd"))]
+        let inner: Vec<f64> = (self.inner.simd_iter(f64s(0.0)), rhs.inner.simd_iter(f64s(0.0)))
+            .zip()
+            .simd_map(|(a, b)| a - b)
+            .scalar_collect();
+
+        #[cfg(not(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "simd")))]
+        let inner: Vec<f64> = self.inner.iter().zip(rhs.inner.iter()).map(|(a, b)| a - b).collect();
 
         Vector { inner }
     }
@@ -45,11 +54,15 @@ impl Mul for Vector {
             panic!("Vectors are of different lenghts");
         }
 
-        let mut total: f64 = 0.0;
-        
-        for i in 0..self.inner.len() {
-            total += self.inner[i] * rhs.inner[i];
-        }
+        #[cfg(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "simd"))]
+        let total: f64 = (self.inner.simd_iter(f64s(0.0)), rhs.inner.simd_iter(f64s(0.0)))
+            .zip()
+            .simd_map(|(a, b)| a * b)
+            .sum();
+
+
+        #[cfg(not(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "simd")))]
+        let total: f64 = self.inner.iter().zip(rhs.inner.iter()).map(|(a, b)| a * b).sum();
 
         total
     }
@@ -62,11 +75,15 @@ impl Mul for &Vector {
             panic!("Vectors are of different lenghts");
         }
 
-        let mut total: f64 = 0.0;
+        #[cfg(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "simd"))]
+        let total: f64 = (self.inner.simd_iter(f64s(0.0)), rhs.inner.simd_iter(f64s(0.0)))
+            .zip()
+            .simd_map(|(a, b)| a * b)
+            .sum();
 
-        for i in 0..self.inner.len() {
-            total += self.inner[i] * rhs.inner[i];
-        }
+
+        #[cfg(not(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "simd")))]
+        let total: f64 = self.inner.iter().zip(rhs.inner.iter()).map(|(a, b)| a * b).sum();
 
         total
     }
@@ -80,11 +97,15 @@ impl Mul for &mut Vector {
             panic!("Vectors are of different lenghts");
         }
 
-        let mut total: f64 = 0.0;
+        #[cfg(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "simd"))]
+        let total: f64 = (self.inner.simd_iter(f64s(0.0)), rhs.inner.simd_iter(f64s(0.0)))
+            .zip()
+            .simd_map(|(a, b)| a * b)
+            .sum();
 
-        for i in 0..self.inner.len() {
-            total += self.inner[i] * rhs.inner[i];
-        }
+
+        #[cfg(not(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "simd")))]
+        let total: f64 = self.inner.iter().zip(rhs.inner.iter()).map(|(a, b)| a * b).sum();
 
         total
     }
