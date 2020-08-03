@@ -3,13 +3,13 @@ mod source;
 mod train;
 mod vector;
 
-use self::source::DataSource;
 use self::vector::Vector;
 #[cfg(all(
     any(target_arch = "x86_64", target_arch = "x86"),
     target_feature = "simd"
 ))]
 use faster::*;
+use source::DataSource;
 
 pub enum ActivationFunc {
     Sigmoid,
@@ -84,7 +84,7 @@ impl Network {
     }
 
     /// Middleware function
-    fn feed_layer(&self, data: Vector, layer: usize) -> Vector {
+    fn feed_layer(&self, data: &Vector, layer: usize) -> Vector {
         if layer == 0 {
             panic!("The first layer does not have weights");
         }
@@ -129,18 +129,17 @@ impl Network {
         let mut layer_input: Vector = input;
 
         for i in 1..n_layers {
-            layer_input = self.feed_layer(layer_input, i);
+            layer_input = self.feed_layer(&layer_input, i);
         }
 
         layer_input
     }
 
-    pub fn train<M: train::TrainMethod, D: DataSource>(&mut self, method: M, training_data: D) {
-        let ref bias_ref = self.bias_matrix;
-        let ref weight_ref = self.weight_matrix;
-        if let self::source::DataKind::Training = training_data.kind() {
-        } else {
-            panic!("Non-training data used");
-        }
+    pub fn train<T: train::Trainer, D: DataSource<(Vector, Vector)>>(
+        &mut self,
+        trainer: &mut T,
+        training_data: D,
+    ) {
+        trainer.train(self, training_data);
     }
 }
