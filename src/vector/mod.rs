@@ -190,6 +190,10 @@ impl Vector {
     pub fn len(&self) -> usize {
         self.inner.len()
     }
+
+    pub fn inner_ref(&self) -> &Vec<f64> {
+        &self.inner
+    }
 }
 
 impl From<Vec<f64>> for Vector {
