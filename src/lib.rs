@@ -43,6 +43,73 @@ impl ActivationFunc {
             },
         })
     }
+
+    fn prime(self) -> Box<dyn Fn(Vector) -> f64> {
+        Box::new(match self {
+            _ => |input: Vector| {
+                let func = self.get();
+                func(input) * (Vector::from(Vec::from(&([1.0].repeat(input.len())))) - func(input))
+            },
+        })
+    }
+}
+
+pub struct NetworkInner {
+    activation_func: ActivationFunc,
+    bias_matrix: Vec<Vec<f64>>,
+    pub configuration: &'static [usize],
+    weight_matrix: Vec<Vec<Vector>>,
+}
+
+impl NetworkInner {
+    pub fn new(configuration: &'static [usize], activation_func: ActivationFunc) -> NetworkInner {
+        let n_layers: usize = configuration.len();
+
+        // bias matrix - initial bias of 0
+        let bias_matrix: Vec<Vec<f64>> = configuration[1..]
+            .iter()
+            .map(|x| [0.0].repeat(*x))
+            .collect();
+
+        // weight matrix
+        let weight_matrix: Vec<Vec<Vector>> = configuration[1..]
+            .iter()
+            .zip(configuration[..(configuration.len() - 1)].iter())
+            .map(|(x, y)| {
+                let mut v: Vec<Vector> = Vec::with_capacity(*x);
+                for i in 0..v.capacity() {
+                    v.push(Vector::new(*y));
+                }
+                v
+            })
+            .collect();
+
+        NetworkInner {
+            activation_func,
+            bias_matrix,
+            configuration,
+            weight_matrix,
+        }
+    }
+
+    fn feed_layer(&self, input: Vector, layer: usize) -> Vector {
+        if layer == 0 {
+            panic!("Cannot feed into input layer!");
+        }
+
+        if input.len() != self.weight_matrix[layer][0].len() {
+            panic!("Dimensions of input vector do not match weight matrix");
+        }
+
+        let weigh_prod_collection: Vec<f64> = self.weight_matrix[layer]
+            .iter()
+            .zip(self.bias_matrix[layer].iter())
+            .map(|(weight, bias)| weight * &input + bias)
+            .collect();
+
+
+        todo!();
+    }
 }
 
 /// The neural network
