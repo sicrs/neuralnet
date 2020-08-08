@@ -101,16 +101,15 @@ impl Network {
         }
     }
 
-    fn feed_layer(&mut self, input: &Vector, layer: usize) -> Vector {
+    fn direct_feed_layer(&mut self, input: &Vector, layer: usize) -> Vector {
         if layer == 0 {
-            panic!("Cannot feed into input layer!");
+            panic!("Cannot feed input into input layer");
         }
 
         if input.len() != self.weight_matrix[layer][0].len() {
-            panic!("Dimensions of input vector do not match weight matrix");
+            panic!("Dimensions of input vector do not match weight array");
         }
 
-        // calculate weighted input
         let zs: Vec<_> = self.weight_matrix[layer]
             .iter()
             .map(|weight_m| weight_m.dot(&input))
@@ -118,7 +117,17 @@ impl Network {
             .map(|(wi, bias)| wi + bias)
             .collect();
         
-        
-        (self.activation_func.activation())(input)
+        let zs_vec = Vector::from(zs);
+
+        (self.activation_func.activation())(&zs_vec)
+    }
+
+    pub fn feed(&mut self, input: Vector) -> Vector {
+        let mut input_holder: Vector = input;
+        for i in 1..self.configuration.len() {
+            input_holder = self.direct_feed_layer(&input_holder, i);
+        }
+
+        input_holder
     }
 }
