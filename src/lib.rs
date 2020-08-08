@@ -4,12 +4,6 @@ mod train;
 mod vector;
 
 use self::vector::Vector;
-#[cfg(all(
-    any(target_arch = "x86_64", target_arch = "x86"),
-    target_feature = "simd"
-))]
-use faster::*;
-use source::DataSource;
 
 pub enum ActivationFuncKind {
     Sigmoid,
