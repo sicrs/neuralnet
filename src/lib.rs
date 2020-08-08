@@ -11,58 +11,60 @@ use self::vector::Vector;
 use faster::*;
 use source::DataSource;
 
-pub enum ActivationFunc {
+pub enum ActivationFuncKind {
     Sigmoid,
 }
 
-impl ActivationFunc {
-    fn get(self) -> Box<dyn Fn(Vector) -> Vector> {
-        Box::new(match self {
-            _ => |input: Vector| {
-                let inner: Vec<f64> = input.into();
+struct ActivationFunction {
+    kind: ActivationFuncKind,
+    activation: Option<Box<dyn Fn(&Vector) -> Vector>>,
+    derivative: Option<Box<dyn Fn(&Vector) -> f64>>,
+    #[cfg(target_feature = "32bit")]
+    derivative: Option<Box<dyn Fn(&Vector) -> f32>>,
+}
 
-                #[cfg(all(
-                    any(target_arch = "x86_64", target_arch = "x86"),
-                    target_feature = "simd"
-                ))]
-                let res: Vec<f64> = inner
-                    .simd_iter(f64s(0.0))
-                    .simd_map(|x| f64s(1.0) / (f64s(1.0) + f64s(std::f64::consts::E).powf(-x)))
-                    .scalar_collect();
-
-                #[cfg(not(all(
-                    any(target_arch = "x86_64", target_arch = "x86"),
-                    target_feature = "simd"
-                )))]
-                let res: Vec<f64> = inner
-                    .iter()
-                    .map(|x| 1.0 / (1.0 + std::f64::consts::E.powf(-x)))
-                    .collect();
-
-                Vector::from(res)
-            },
-        })
+impl ActivationFunction {
+    #[inline(always)]
+    fn new(kind: ActivationFuncKind) -> ActivationFunction {
+        ActivationFunction {
+            kind,
+            activation: None,
+            derivative: None,
+        }
     }
 
-    fn prime(self) -> Box<dyn Fn(Vector) -> f64> {
-        Box::new(match self {
-            _ => |input: Vector| {
-                let func = self.get();
-                func(input) * (Vector::from(Vec::from(&([1.0].repeat(input.len())))) - func(input))
-            },
-        })
+    fn activation(&mut self) -> &Box<dyn Fn(&Vector) -> Vector> {
+        if let None = &self.activation {
+            self.activation = Some(Box::new(match self.kind {
+                _ => |input: &Vector| {
+                    //#[cfg(target_feature = "64bit")]    
+                    let inner: &Vec<f64> = input.inner_ref();
+                    #[cfg(target_feature = "32bit")]
+                    let inner: &Vec<f32> = input.inner_ref();
+
+                    let res: Vec<_> = inner
+                        .iter()
+                        .map(|x| 1.0 / (1.0 + std::f64::consts::E.powf(-x)))
+                        .collect();
+
+                    Vector::from(res)
+                }
+            }))
+        }
+
+        self.activation.as_ref().unwrap()
     }
 }
 
-pub struct NetworkInner {
-    activation_func: ActivationFunc,
+pub struct Network {
+    activation_func: ActivationFunction,
     bias_matrix: Vec<Vec<f64>>,
     pub configuration: &'static [usize],
     weight_matrix: Vec<Vec<Vector>>,
 }
 
-impl NetworkInner {
-    pub fn new(configuration: &'static [usize], activation_func: ActivationFunc) -> NetworkInner {
+impl Network {
+    pub fn new(configuration: &'static [usize], activation_func: ActivationFuncKind) -> Network {
         let n_layers: usize = configuration.len();
 
         // bias matrix - initial bias of 0
@@ -75,24 +77,31 @@ impl NetworkInner {
         let weight_matrix: Vec<Vec<Vector>> = configuration[1..]
             .iter()
             .zip(configuration[..(configuration.len() - 1)].iter())
-            .map(|(x, y)| {
-                let mut v: Vec<Vector> = Vec::with_capacity(*x);
-                for i in 0..v.capacity() {
-                    v.push(Vector::new(*y));
+            .map(|(neurons, weights)| {
+                let mut v: Vec<Vector> = Vec::with_capacity(*neurons);
+                for i in 0..*neurons {
+                    //#[cfg(target_feature = "64bit")]
+                    let inner = [0.0 as f64].repeat(*weights);
+                    #[cfg(target_feature = "32bit")]
+                    let inner = [0.0 as f32].repeat(*weights);
+                    v.push(Vector::from(inner));
                 }
+
                 v
             })
             .collect();
 
-        NetworkInner {
-            activation_func,
+        assert_eq!(bias_matrix.len(), weight_matrix.len());
+        
+        Network {
+            activation_func: ActivationFunction::new(activation_func),
             bias_matrix,
             configuration,
             weight_matrix,
         }
     }
 
-    fn feed_layer(&self, input: Vector, layer: usize) -> Vector {
+    fn feed_layer(&mut self, input: &Vector, layer: usize) -> Vector {
         if layer == 0 {
             panic!("Cannot feed into input layer!");
         }
@@ -101,112 +110,15 @@ impl NetworkInner {
             panic!("Dimensions of input vector do not match weight matrix");
         }
 
-        let weigh_prod_collection: Vec<f64> = self.weight_matrix[layer]
+        // calculate weighted input
+        let zs: Vec<_> = self.weight_matrix[layer]
             .iter()
+            .map(|weight_m| weight_m.dot(&input))
             .zip(self.bias_matrix[layer].iter())
-            .map(|(weight, bias)| weight * &input + bias)
+            .map(|(wi, bias)| wi + bias)
             .collect();
-
-
-        todo!();
-    }
-}
-
-/// The neural network
-pub struct Network {
-    activation_function: Box<dyn Fn(Vector) -> Vector>,
-    bias_matrix: Vec<Vec<f64>>,
-    pub configuration: Vec<usize>,
-    weight_matrix: Vec<Vec<Vector>>,
-}
-
-impl Network {
-    pub fn new(configuration: &[usize], activation_function: ActivationFunc) -> Network {
-        let configuration: Vec<usize> = Vec::from(configuration);
-        let n_layers: usize = configuration.len();
-
-        // output neurons do not require biases
-        let bias_matrix: Vec<Vec<f64>> = configuration.iter().map(|x| [0.0].repeat(*x)).collect();
-
-        // The input neurons do not require a weight vector
-        // NOTE: index 0 contains the weights for the nodes of layer 2 (index layer 1)
-        let weight_matrix: Vec<Vec<Vector>> = configuration[1..]
-            .iter()
-            .zip(configuration[..(configuration.len() - 1)].iter())
-            .map(|(x, y)| {
-                let mut v: Vec<Vector> = Vec::with_capacity(*x);
-                for i in 0..v.capacity() {
-                    v[i] = Vector::new(*y);
-                }
-                v
-            })
-            .collect();
-
-        Network {
-            activation_function: activation_function.get(),
-            bias_matrix,
-            configuration,
-            weight_matrix,
-        }
-    }
-
-    /// Middleware function
-    fn feed_layer(&self, data: &Vector, layer: usize) -> Vector {
-        if layer == 0 {
-            panic!("The first layer does not have weights");
-        }
-
-        if data.len() != self.weight_matrix[layer][0].len() {
-            panic!("The dimension of the input vector does not correspond with the dimension of the weight vector");
-        }
-
-        let weight_prod_collection: Vec<f64> = self.weight_matrix[layer - 1]
-            .iter()
-            .map(|weight| weight * &data)
-            .collect();
-
-        #[cfg(all(
-            any(target_arch = "x86_64", target_arch = "x86"),
-            target_feature = "simd"
-        ))]
-        let result: Vec<f64> = (
-            weight_prod_collection.simd_iter(f64s(0.0)),
-            self.bias_matrix[layer].simd_iter(f64s(0.0)),
-        )
-            .zip()
-            .simd_map(|(weight_prod, bias)| weight_prod + bias)
-            .scalar_collect();
-
-        #[cfg(not(all(
-            any(target_arch = "x86_64", target_arch = "x86"),
-            target_feature = "simd"
-        )))]
-        let result: Vec<f64> = weight_prod_collection
-            .iter()
-            .zip(self.bias_matrix[layer].iter())
-            .map(|(weight_prod, bias)| weight_prod + bias)
-            .collect();
-
-        Vector::from(result)
-    }
-
-    /// Calculate output for the activation func input
-    pub fn feed(&self, input: Vector) -> Vector {
-        let n_layers = self.configuration.len();
-        let mut layer_input: Vector = input;
-
-        for i in 1..n_layers {
-            layer_input = self.feed_layer(&layer_input, i);
-        }
-
-        layer_input
-    }
-
-    pub fn train<T: train::Trainer, D: DataSource<(Vector, Vector)>>(
-        &mut self,
-        trainer: &mut T,
-        training_data: D,
-    ) {
-        trainer.train(self, training_data);
+        
+        
+        (self.activation_func.activation())(input)
     }
 }
