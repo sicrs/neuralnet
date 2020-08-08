@@ -11,6 +11,16 @@ impl Vector {
     pub fn len(&self) -> usize {
         self.inner.len()
     }
+
+    //#[cfg(target_feature = "64bit")]
+    pub fn inner_ref(&self) -> &Vec<f64> {
+        &self.inner
+    }
+
+    #[cfg(target_feature = "32bit")]
+    pub fn inner_ref(&self) -> &Vec<f32> {
+        &self.inner
+    }
 }
 
 impl Add for &Vector {
