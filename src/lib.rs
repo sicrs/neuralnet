@@ -1,64 +1,21 @@
 #![allow(dead_code, unused_imports, unused_variables)]
+mod activation;
 mod source;
 mod train;
 mod vector;
 
 use self::vector::Vector;
+use activation::ActivationFunction;
 
-pub enum ActivationFuncKind {
-    Sigmoid,
-}
-
-struct ActivationFunction {
-    kind: ActivationFuncKind,
-    activation: Option<Box<dyn Fn(&Vector) -> Vector>>,
-    derivative: Option<Box<dyn Fn(&Vector) -> f64>>,
-    #[cfg(target_feature = "32bit")]
-    derivative: Option<Box<dyn Fn(&Vector) -> f32>>,
-}
-
-impl ActivationFunction {
-    #[inline(always)]
-    fn new(kind: ActivationFuncKind) -> ActivationFunction {
-        ActivationFunction {
-            kind,
-            activation: None,
-            derivative: None,
-        }
-    }
-
-    fn activation(&mut self) -> &Box<dyn Fn(&Vector) -> Vector> {
-        if let None = &self.activation {
-            self.activation = Some(Box::new(match self.kind {
-                _ => |input: &Vector| {
-                    //#[cfg(target_feature = "64bit")]
-                    let inner: &Vec<f64> = input.inner_ref();
-                    #[cfg(target_feature = "32bit")]
-                    let inner: &Vec<f32> = input.inner_ref();
-
-                    let res: Vec<_> = inner
-                        .iter()
-                        .map(|x| 1.0 / (1.0 + std::f64::consts::E.powf(-x)))
-                        .collect();
-
-                    Vector::from(res)
-                },
-            }))
-        }
-
-        self.activation.as_ref().unwrap()
-    }
-}
-
-pub struct Network {
-    activation_func: ActivationFunction,
+pub struct Network<A: ActivationFunction> {
+    activation_func: A,
     bias_matrix: Vec<Vec<f64>>,
     pub configuration: &'static [usize],
     weight_matrix: Vec<Vec<Vector>>,
 }
 
-impl Network {
-    pub fn new(configuration: &'static [usize], activation_func: ActivationFuncKind) -> Network {
+impl<A: ActivationFunction> Network<A> {
+    pub fn new(configuration: &'static [usize], activation_func: A) -> Network<A> {
         let n_layers: usize = configuration.len();
 
         // bias matrix - initial bias of 0
@@ -88,7 +45,7 @@ impl Network {
         assert_eq!(bias_matrix.len(), weight_matrix.len());
 
         Network {
-            activation_func: ActivationFunction::new(activation_func),
+            activation_func,
             bias_matrix,
             configuration,
             weight_matrix,
@@ -113,7 +70,7 @@ impl Network {
 
         let zs_vec = Vector::from(zs);
 
-        (self.activation_func.activation())(&zs_vec)
+        self.activation_func.activation(&zs_vec)
     }
 
     pub fn feed(&mut self, input: Vector) -> Vector {

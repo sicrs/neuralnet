@@ -2,7 +2,7 @@ use crate::{source::DataSource, Network, Vector};
 use faster::*;
 
 pub trait Trainer {
-    fn train<D: DataSource<(Vector, Vector)>>(&mut self, net: &mut Network, data: D);
+    fn train<A: crate::ActivationFunction, D: DataSource<(Vector, Vector)>>(&mut self, net: &mut Network<A>, data: D);
 }
 
 pub struct StochasticGradientDescent {
@@ -20,7 +20,24 @@ impl StochasticGradientDescent {
         }
     }
 
-    fn train_inner<D>(&mut self, net: &mut Network, data: D)
+    fn n_train_inner<A: crate::ActivationFunction, D>(&mut self, net: &mut Network<A>, data: D)
+    where
+        D: DataSource<(Vector, Vector)>,
+    {
+        // break up the sources into small subsamples
+        let dataset_collect: Vec<&(Vector, Vector)> = data.iter().collect();
+        let iterations: usize = dataset_collect.len() / self.subsample_size;
+
+        let subsample_iter = (0..iterations).map(|x| {
+            Vec::from(&dataset_collect[(x * self.subsample_size)..((x + 1) * self.subsample_size)])
+        });
+
+        for subsample in subsample_iter {
+            let mut counter: usize = 0;
+        }
+    }
+
+    fn train_inner<A: crate::ActivationFunction, D>(&mut self, net: &mut Network<A>, data: D)
     where
         D: DataSource<(Vector, Vector)>,
     {
@@ -40,7 +57,6 @@ impl StochasticGradientDescent {
 
             // iterate through samples in the subsample and generate activation and loss func derivatives
             let activation = subsample.iter().map(|(input, output)| {
-                
                 if counter == 0 {
                     let inner: Vec<f64> = input.inner_ref().iter().map(|x| *x).collect();
                     Vector::from(inner)
@@ -60,7 +76,7 @@ impl StochasticGradientDescent {
 }
 
 impl Trainer for StochasticGradientDescent {
-    fn train<D: DataSource<(Vector, Vector)>>(&mut self, net: &mut Network, data: D) {
+    fn train<A: crate::ActivationFunction, D: DataSource<(Vector, Vector)>>(&mut self, net: &mut Network<A>, data: D) {
         self.train_inner(net, data);
     }
 }
