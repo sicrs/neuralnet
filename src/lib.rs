@@ -37,7 +37,7 @@ impl ActivationFunction {
         if let None = &self.activation {
             self.activation = Some(Box::new(match self.kind {
                 _ => |input: &Vector| {
-                    //#[cfg(target_feature = "64bit")]    
+                    //#[cfg(target_feature = "64bit")]
                     let inner: &Vec<f64> = input.inner_ref();
                     #[cfg(target_feature = "32bit")]
                     let inner: &Vec<f32> = input.inner_ref();
@@ -48,7 +48,7 @@ impl ActivationFunction {
                         .collect();
 
                     Vector::from(res)
-                }
+                },
             }))
         }
 
@@ -92,7 +92,7 @@ impl Network {
             .collect();
 
         assert_eq!(bias_matrix.len(), weight_matrix.len());
-        
+
         Network {
             activation_func: ActivationFunction::new(activation_func),
             bias_matrix,
@@ -116,7 +116,7 @@ impl Network {
             .zip(self.bias_matrix[layer].iter())
             .map(|(wi, bias)| wi + bias)
             .collect();
-        
+
         let zs_vec = Vector::from(zs);
 
         (self.activation_func.activation())(&zs_vec)

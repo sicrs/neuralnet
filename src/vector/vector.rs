@@ -1,4 +1,4 @@
-use std::ops::{ Add, Mul, Sub };
+use std::ops::{Add, Mul, Sub};
 
 pub struct Vector {
     //#[cfg(target_feature = "64bit")]
@@ -30,12 +30,13 @@ impl Add for &Vector {
             panic!("Dimensions do not match!");
         }
 
-        let inner: Vec<_> = self.inner
+        let inner: Vec<_> = self
+            .inner
             .iter()
             .zip(rhs.inner.iter())
             .map(|(a, b)| a + b)
             .collect();
-        
+
         Vector { inner }
     }
 }
@@ -47,12 +48,13 @@ impl Add for Vector {
             panic!("Dimensions do not match!");
         }
 
-        let inner: Vec<_> = self.inner
+        let inner: Vec<_> = self
+            .inner
             .iter()
             .zip(rhs.inner.iter())
             .map(|(a, b)| a + b)
             .collect();
-        
+
         Vector { inner }
     }
 }
@@ -64,7 +66,8 @@ impl Sub for &Vector {
             panic!("Dimensions do not match!");
         }
 
-        let inner: Vec<_> = self.inner
+        let inner: Vec<_> = self
+            .inner
             .iter()
             .zip(rhs.inner.iter())
             .map(|(a, b)| a - b)
@@ -81,7 +84,8 @@ impl Sub for Vector {
             panic!("Dimensions do not match!");
         }
 
-        let inner: Vec<_> = self.inner
+        let inner: Vec<_> = self
+            .inner
             .iter()
             .zip(rhs.inner.iter())
             .map(|(a, b)| a - b)
@@ -94,7 +98,8 @@ impl Sub for Vector {
 impl Vector {
     //#[cfg(target_feature = "64bit")]
     pub fn dot(&self, rhs: &Self) -> f64 {
-        let total: f64 = self.inner
+        let total: f64 = self
+            .inner
             .iter()
             .zip(rhs.inner.iter())
             .map(|(a, b)| a * b)
@@ -105,7 +110,8 @@ impl Vector {
 
     #[cfg(target_feature = "32bit")]
     pub fn dot(&self, rhs: &Self) -> f32 {
-        let total: f32 = self.inner
+        let total: f32 = self
+            .inner
             .iter()
             .zip(rhs.inner.iter())
             .map(|(a, b)| a * b)
@@ -119,9 +125,7 @@ macro_rules! impl_from_to {
     ($t:ty) => {
         impl From<Vec<$t>> for Vector {
             fn from(source: Vec<$t>) -> Self {
-                Vector {
-                    inner: source,
-                }
+                Vector { inner: source }
             }
         }
 
