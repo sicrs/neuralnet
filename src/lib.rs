@@ -2,6 +2,7 @@
 mod activation;
 mod source;
 mod train;
+pub mod util;
 mod vector;
 
 use self::vector::Vector;
