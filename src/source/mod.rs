@@ -1,3 +1,2 @@
-pub trait DataSource<D>: Iterator {
-    fn iter(&self) -> std::slice::Iter<D>;
-}
+/// DataSource designates an Iterator as a data source
+pub trait DataSource<D>: Iterator<Item = D> {}
