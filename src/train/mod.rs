@@ -6,6 +6,6 @@ pub trait Trainer {
     fn train<A: ActivationFunction, D: DataSource<(Vector, Vector)>>(
         &mut self,
         net: &mut Network<A>,
-        data: D,
+        data: &mut D,
     );
 }

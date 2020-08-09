@@ -135,4 +135,8 @@ impl Iterator for MNISTIDXTrainingData {
     }
 }
 
-impl DataSource<(Vector, Vector)> for MNISTIDXTrainingData {}
+impl DataSource<(Vector, Vector)> for MNISTIDXTrainingData {
+    fn len(&self) -> usize {
+        self.num_data
+    }
+}
