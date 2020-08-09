@@ -42,8 +42,6 @@ impl<A: ActivationFunction> Network<A> {
             })
             .collect();
 
-        assert_eq!(bias_matrix.len(), weight_matrix.len());
-
         Network {
             activation_func,
             bias_matrix,

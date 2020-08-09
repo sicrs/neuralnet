@@ -1,8 +1,8 @@
-use crate::{source::DataSource, Network, Vector};
+use crate::{ActivationFunction, source::DataSource, Network, Vector};
 use faster::*;
 
 pub trait Trainer {
-    fn train<A: crate::ActivationFunction, D: DataSource<(Vector, Vector)>>(&mut self, net: &mut Network<A>, data: D);
+    fn train<A: ActivationFunction, D: DataSource<(Vector, Vector)>>(&mut self, net: &mut Network<A>, data: D);
 }
 
 pub struct StochasticGradientDescent {
@@ -20,7 +20,7 @@ impl StochasticGradientDescent {
         }
     }
 
-    fn n_train_inner<A: crate::ActivationFunction, D>(&mut self, net: &mut Network<A>, data: D)
+    fn n_train_inner<A: ActivationFunction, D>(&mut self, net: &mut Network<A>, data: D)
     where
         D: DataSource<(Vector, Vector)>,
     {
@@ -37,7 +37,7 @@ impl StochasticGradientDescent {
         }
     }
 
-    fn train_inner<A: crate::ActivationFunction, D>(&mut self, net: &mut Network<A>, data: D)
+    fn train_inner<A: ActivationFunction, D>(&mut self, net: &mut Network<A>, data: D)
     where
         D: DataSource<(Vector, Vector)>,
     {
@@ -76,7 +76,7 @@ impl StochasticGradientDescent {
 }
 
 impl Trainer for StochasticGradientDescent {
-    fn train<A: crate::ActivationFunction, D: DataSource<(Vector, Vector)>>(&mut self, net: &mut Network<A>, data: D) {
+    fn train<A: ActivationFunction, D: DataSource<(Vector, Vector)>>(&mut self, net: &mut Network<A>, data: D) {
         self.train_inner(net, data);
     }
 }
