@@ -104,11 +104,37 @@ impl MNISTImageReader {
 pub struct MNISTIDXTrainingData {
     images: MNISTImageReader,
     labels: MNISTLabelReader,
+    pub num_data: usize,
+    //counter: usize,
+}
+
+impl MNISTIDXTrainingData {
+    pub fn new(image_path: &'static str, label_path: &'static str) -> MNISTIDXTrainingData {
+        let images = MNISTImageReader::new(image_path);
+        let labels = MNISTLabelReader::new(label_path);
+        if images.num_items != labels.num_items {
+            panic!("Size mismatch between image and label set!");
+        }
+        MNISTIDXTrainingData {
+            //counter: 0,
+            num_data: images.num_items,
+            images,
+            labels,
+        }
+    }
 }
 
 impl Iterator for MNISTIDXTrainingData {
     type Item = (Vector, Vector);
     fn next(&mut self) -> Option<Self::Item> {
-        todo!()
+        match (self.images.read_next_image(), self.labels.read_next_label()) {
+            (Some(image_vec), Some(label_vec)) => {
+                //self.counter += 1;
+                Some((image_vec, label_vec))
+            },
+            _ => return None,
+        }
     }
 }
+
+impl DataSource<(Vector, Vector)> for MNISTIDXTrainingData {}
