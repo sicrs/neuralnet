@@ -21,11 +21,12 @@ impl ActivationFunction for Sigmoid {
 
     fn derivative(&self, input: &Vector) -> Vector {
         let sigmoid_output = self.activation(input);
-        let res: Vec<_> = sigmoid_output.inner_ref()
+        let res: Vec<_> = sigmoid_output
+            .inner_ref()
             .iter()
             .map(|x| x * (1.0 - x))
             .collect();
-        
+
         Vector::from(res)
     }
 }

@@ -77,7 +77,7 @@ impl MNISTImageReader {
         let num_items: u32 = u8_to_u32(&buf[4..8]);
         let num_rows: u32 = u8_to_u32(&buf[8..12]);
         let num_cols: u32 = u8_to_u32(&buf[12..16]);
-        
+
         MNISTImageReader {
             inner,
             num_items: num_items as usize,
@@ -93,9 +93,7 @@ impl MNISTImageReader {
         if len == 0 {
             None
         } else {
-            let float_vec: Vec<f64> = buf[0..self.n_pixels].iter()
-                .map(|x| *x as f64)
-                .collect();
+            let float_vec: Vec<f64> = buf[0..self.n_pixels].iter().map(|x| *x as f64).collect();
             Some(Vector::from(float_vec))
         }
     }
@@ -131,7 +129,7 @@ impl Iterator for MNISTIDXTrainingData {
             (Some(image_vec), Some(label_vec)) => {
                 //self.counter += 1;
                 Some((image_vec, label_vec))
-            },
+            }
             _ => return None,
         }
     }
