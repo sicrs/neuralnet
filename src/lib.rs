@@ -51,7 +51,7 @@ impl<A: ActivationFunction> Network<A> {
         }
     }
 
-    fn direct_feed_layer(&mut self, input: &Vector, layer: usize) -> Vector {
+    fn feed_layer(&mut self, input: &Vector, layer: usize) -> (Vector, Vector) {
         if layer == 0 {
             panic!("Cannot feed input into input layer");
         }
@@ -67,9 +67,16 @@ impl<A: ActivationFunction> Network<A> {
             .map(|(wi, bias)| wi + bias)
             .collect();
 
-        let zs_vec = Vector::from(zs);
+        let zs_vec: Vector = Vector::from(zs);
+        let activation_vec = self.activation_func.activation(&zs_vec);
+        
+        (zs_vec, activation_vec)
+    }
 
-        self.activation_func.activation(&zs_vec)
+    fn direct_feed_layer(&mut self, input: &Vector, layer: usize) -> Vector {
+        let (_zs, activation) = self.feed_layer(input, layer);
+
+        activation
     }
 
     pub fn feed(&mut self, input: Vector) -> Vector {
