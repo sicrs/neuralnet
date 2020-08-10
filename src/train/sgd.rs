@@ -26,27 +26,6 @@ impl Trainer for StochasticGradientDescent {
         let num_data_total: usize = data.len();
         let n_subsamples: usize = num_data_total / self.subsample_size;
 
-        fn backpropagate<A: ActivationFunction>(io_pair: (Vector, Vector), net: &mut Network<A>) {
-            // collect all zs and activations
-            // z = w * input + b
-            let (input, output) = io_pair;
-            let mut zs: Vec<Vector> = Vec::new();
-            let mut activations: Vec<Vector> = Vec::new();
-            activations.push(input);
-
-            // collect all zs and activations
-            for layer in 0..net.configuration.len() {
-                let (z, activation) = net.feed_layer(&activations[activations.len() - 1], layer);
-                zs.push(z);
-                activations.push(activation);
-            }
-
-            // calculate delta
-            let delta: f64 = {
-                let deriv = net.activation_func.derivative(&zs[zs.len() - 1]);
-                (&activations[activations.len() - 1] - &output).dot(&deriv)
-            };
-        }
         // iterate through the amount of subsamples
         for i in 0..n_subsamples {
             // collect self.subsample_size input-output vector tuples in an iterator.
@@ -54,4 +33,26 @@ impl Trainer for StochasticGradientDescent {
             // backpropagate
         }
     }
+}
+
+fn backpropagate<A: ActivationFunction>(io_pair: (Vector, Vector), net: &mut Network<A>) {
+    // collect all zs and activations
+    // z = w * input + b
+    let (input, output) = io_pair;
+    let mut zs: Vec<Vector> = Vec::new();
+    let mut activations: Vec<Vector> = Vec::new();
+    activations.push(input);
+
+    // collect all zs and activations
+    for layer in 0..net.configuration.len() {
+        let (z, activation) = net.feed_layer(&activations[activations.len() - 1], layer);
+        zs.push(z);
+        activations.push(activation);
+    }
+
+    // calculate delta
+    let delta: f64 = {
+        let deriv = net.activation_func.derivative(&zs[zs.len() - 1]);
+        (&activations[activations.len() - 1] - &output).dot(&deriv)
+    };
 }
