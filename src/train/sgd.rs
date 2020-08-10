@@ -31,6 +31,7 @@ impl Trainer for StochasticGradientDescent {
             // collect self.subsample_size input-output vector tuples in an iterator.
             let subsample_iterator = (0..self.subsample_size).map(|_s| data.next().unwrap());
             // backpropagate
+            subsample_iterator.for_each(|io_pair| backpropagate(io_pair, net));
         }
     }
 }
@@ -50,9 +51,20 @@ fn backpropagate<A: ActivationFunction>(io_pair: (Vector, Vector), net: &mut Net
         activations.push(activation);
     }
 
-    // calculate delta
-    let delta: f64 = {
-        let deriv = net.activation_func.derivative(&zs[zs.len() - 1]);
-        (&activations[activations.len() - 1] - &output).dot(&deriv)
-    };
+    // declare nabla vars
+    // NOTE: The vectors store in reverse
+    let mut rev_nabla_bias: Vec<Vector> = Vec::new();
+    let mut rev_nabla_weight: Vec<Vec<Vector>> = Vec::new();
+
+    rev_nabla_bias.push({
+        // calculate delta
+        let deriv: Vec<f64> = net.activation_func.derivative(&zs[zs.len() - 1]).into();
+        let diff: Vec<f64> = (&activations[activations.len() - 1] - &output).into();
+        let delta: Vec<f64> = diff
+            .iter()
+            .zip(deriv.iter())
+            .map(|(df, dv)| df * dv)
+            .collect();
+        Vector::from(delta)
+    });
 }
