@@ -9,7 +9,7 @@ use self::vector::Vector;
 use activation::ActivationFunction;
 
 pub struct Network<A: ActivationFunction> {
-    activation_func: A,
+    pub activation_func: A,
     bias_matrix: Vec<Vec<f64>>,
     pub configuration: &'static [usize],
     weight_matrix: Vec<Vec<Vector>>,
@@ -51,7 +51,7 @@ impl<A: ActivationFunction> Network<A> {
         }
     }
 
-    fn feed_layer(&mut self, input: &Vector, layer: usize) -> (Vector, Vector) {
+    pub fn feed_layer(&mut self, input: &Vector, layer: usize) -> (Vector, Vector) {
         if layer == 0 {
             panic!("Cannot feed input into input layer");
         }
