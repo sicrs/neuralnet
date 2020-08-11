@@ -119,6 +119,16 @@ impl Vector {
 
         total
     }
+
+    pub fn scale(&self, scale_by: f64) -> Vector {
+        let inner: Vec<f64> = self.inner_ref();
+        let scale: Vec<f64> = inner
+            .iter()
+            .map(|x| x * scale_by)
+            .collect();
+
+        Vector::from(scale)
+    }
 }
 
 macro_rules! impl_from_to {
