@@ -1,4 +1,5 @@
 use std::ops::{Add, Mul, Sub};
+use super::{Dot, Scale};
 
 pub struct Vector {
     //#[cfg(target_feature = "64bit")]
@@ -95,39 +96,58 @@ impl Sub for Vector {
     }
 }
 
-impl Vector {
-    //#[cfg(target_feature = "64bit")]
-    pub fn dot(&self, rhs: &Self) -> f64 {
-        let total: f64 = self
-            .inner
+impl Scale for Vector {
+    type Output = Self;
+    fn scale(self, factor: f64) -> Self::Output {
+        let inner: Vec<f64> = self.into();
+        let res: Vec<f64> = inner
             .iter()
-            .zip(rhs.inner.iter())
-            .map(|(a, b)| a * b)
-            .sum();
-
-        total
+            .map(|x| x * factor)
+            .collect();
+        
+        Vector::from(res)
     }
+}
 
-    #[cfg(target_feature = "32bit")]
-    pub fn dot(&self, rhs: &Self) -> f32 {
-        let total: f32 = self
-            .inner
+impl Scale for &Vector {
+    type Output = Vector;
+    fn scale(self, factor: f64) -> Self::Output {
+        let inner_ref: &Vec<f64> = self.inner_ref();
+        let res: Vec<f64> = inner_ref
             .iter()
-            .zip(rhs.inner.iter())
-            .map(|(a, b)| a * b)
-            .sum();
-
-        total
-    }
-
-    pub fn scale(&self, scale_by: f64) -> Vector {
-        let inner: Vec<f64> = self.inner_ref();
-        let scale: Vec<f64> = inner
-            .iter()
-            .map(|x| x * scale_by)
+            .map(|x| x * factor)
             .collect();
 
-        Vector::from(scale)
+        Vector::from(res)
+    }
+    
+}
+
+impl Dot for Vector {
+    type Output = f64;
+    fn dot(self, rhs: Self) -> Self::Output {
+        let total = self
+            .inner
+            .iter()
+            .zip(rhs.inner.iter())
+            .map(|(a, b)| a * b)
+            .sum();
+
+        total
+    }
+}
+
+impl Dot for &Vector {
+    type Output = f64;
+    fn dot(self, rhs: Self) -> Self::Output {
+        let total = self
+            .inner_ref()
+            .iter()
+            .zip(rhs.inner.iter())
+            .map(|(a, b)| a * b)
+            .sum();
+        
+        total
     }
 }
 

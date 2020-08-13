@@ -10,3 +10,14 @@ mod vector;
 //mod vector_simd;
 
 pub use vector::*;
+
+
+pub trait Scale {
+    type Output;
+    fn scale(self, factor: f64) -> Self::Output;
+}
+
+pub trait Dot {
+    type Output;
+    fn dot(self, rhs: Self) -> Self::Output;
+}
