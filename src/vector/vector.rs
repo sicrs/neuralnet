@@ -1,5 +1,5 @@
-use std::ops::{Add, Mul, Sub};
 use super::{Dot, Scale};
+use std::ops::{Add, Mul, Sub};
 
 pub struct Vector {
     //#[cfg(target_feature = "64bit")]
@@ -100,11 +100,8 @@ impl Scale for Vector {
     type Output = Self;
     fn scale(self, factor: f64) -> Self::Output {
         let inner: Vec<f64> = self.into();
-        let res: Vec<f64> = inner
-            .iter()
-            .map(|x| x * factor)
-            .collect();
-        
+        let res: Vec<f64> = inner.iter().map(|x| x * factor).collect();
+
         Vector::from(res)
     }
 }
@@ -113,14 +110,10 @@ impl Scale for &Vector {
     type Output = Vector;
     fn scale(self, factor: f64) -> Self::Output {
         let inner_ref: &Vec<f64> = self.inner_ref();
-        let res: Vec<f64> = inner_ref
-            .iter()
-            .map(|x| x * factor)
-            .collect();
+        let res: Vec<f64> = inner_ref.iter().map(|x| x * factor).collect();
 
         Vector::from(res)
     }
-    
 }
 
 impl Dot for Vector {
@@ -146,7 +139,7 @@ impl Dot for &Vector {
             .zip(rhs.inner.iter())
             .map(|(a, b)| a * b)
             .sum();
-        
+
         total
     }
 }

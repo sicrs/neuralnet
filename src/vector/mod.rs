@@ -11,7 +11,6 @@ mod vector;
 
 pub use vector::*;
 
-
 pub trait Scale {
     type Output;
     fn scale(self, factor: f64) -> Self::Output;

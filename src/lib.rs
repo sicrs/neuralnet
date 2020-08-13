@@ -69,7 +69,7 @@ impl<A: ActivationFunction> Network<A> {
 
         let zs_vec: Vector = Vector::from(zs);
         let activation_vec = self.activation_func.activation(&zs_vec);
-        
+
         (zs_vec, activation_vec)
     }
 
