@@ -5,7 +5,7 @@ mod train;
 pub mod util;
 mod vector;
 
-use self::vector::Vector;
+use self::vector::{Dot, Vector};
 use activation::ActivationFunction;
 
 pub struct Network<A: ActivationFunction> {
