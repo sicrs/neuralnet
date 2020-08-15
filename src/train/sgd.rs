@@ -1,5 +1,5 @@
 use super::Trainer;
-use crate::{source::DataSource, ActivationFunction, Network, Vector};
+use crate::{vector::{Dot, Scale}, source::DataSource, ActivationFunction, Network, Vector};
 
 pub struct StochasticGradientDescent {
     /// Learning speed
@@ -45,7 +45,7 @@ fn backpropagate<A: ActivationFunction>(io_pair: (Vector, Vector), net: &mut Net
     activations.push(input);
 
     // collect all zs and activations
-    for layer in 0..net.configuration.len() {
+    for layer in 1..net.configuration.len() {
         let (z, activation) = net.feed_layer(&activations[activations.len() - 1], layer);
         zs.push(z);
         activations.push(activation);
@@ -56,6 +56,9 @@ fn backpropagate<A: ActivationFunction>(io_pair: (Vector, Vector), net: &mut Net
     let mut rev_nabla_bias: Vec<Vector> = Vec::new();
     let mut rev_nabla_weight: Vec<Vec<Vector>> = Vec::new();
 
+    // calculate delta
+    // dL / db = (dL / dO) * (dO/db) = (dL / dO) * (dO / dz) * (dz / db) = (dL / dO) * (dO / dz) = delta
+    // dL / dw = (dL / dO) * (dO / dz) * (dz / dw) = delta * (dz / dw) = delta * input(layer n)
     rev_nabla_bias.push({
         // calculate delta
         let deriv: Vec<f64> = net.activation_func.derivative(&zs[zs.len() - 1]).into();
@@ -66,5 +69,11 @@ fn backpropagate<A: ActivationFunction>(io_pair: (Vector, Vector), net: &mut Net
             .map(|(df, dv)| df * dv)
             .collect();
         Vector::from(delta)
+    });
+    rev_nabla_weight.push({
+        let delta: &Vec<f64> = rev_nabla_bias[0].inner_ref();
+        let mut nabla_ws: Vec<Vector> = Vec::new();
+        delta.iter().for_each(|x| nabla_ws.push((&activations[activations.len() - 2]).scale(*x)));
+        nabla_ws
     });
 }
